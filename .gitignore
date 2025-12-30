@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+.Python
+*.egg-info/
+
+# Local envs
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Strategy artifacts / caches (generated)
+price_cache.csv
+equity_curve.png
+analytics_*.png
+
+# OS/editor
+.DS_Store
+Thumbs.db
+
