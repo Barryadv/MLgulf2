@@ -91,6 +91,15 @@ def compute_state() -> dict[str, Any]:
     prices_train = prices[train_mask].copy()
     prices_test = prices[test_mask].copy()  # kept for parity with the script (may be unused later)
 
+    if len(prices_train) == 0:
+        raise ValueError(
+            "Training slice is empty after filtering by TRAIN_START/TRAIN_END. "
+            f"Available price date range: {prices.index.min().date()} to {prices.index.max().date()}. "
+            f"Configured train window: {strat.TRAIN_START} to {strat.TRAIN_END}. "
+            "Likely causes: missing/partial yfinance history for one ticker in this environment, "
+            "or date parsing/zone issues. Check Render logs for yfinance output."
+        )
+
     beta = strat.fit_hedge_ratio(prices_train)
 
     full_data, feature_cols = strat.build_features_and_labels(prices, beta)
