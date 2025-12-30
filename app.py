@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import threading
 from datetime import datetime
+import traceback
 from typing import Any, Literal
 
 import numpy as np
@@ -191,6 +192,21 @@ def refresh_state() -> dict[str, Any]:
 
 
 app = FastAPI(title="Pairs Trading Dashboard: 1120.SR vs KSA", version="0.1.0")
+
+def _json_500(context: str, exc: Exception) -> JSONResponse:
+    """
+    Return a JSON 500 response with details for debugging deploy/runtime issues.
+
+    This is intentionally verbose to help diagnose production-only failures
+    (e.g., missing deps, yfinance issues, empty data).
+    """
+    tb = traceback.format_exc()
+    payload = {
+        "error": str(exc),
+        "context": context,
+        "traceback": tb,
+    }
+    return JSONResponse(status_code=500, content=payload)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -622,16 +638,19 @@ def aramco_pair() -> str:
 
 @app.get("/api/summary")
 def api_summary() -> JSONResponse:
-    st = get_state()
-    payload = {
-        "computed_at": st["computed_at"],
-        "config": st["config"],
-        "model": st["model"],
-        "metrics": st["metrics"],
-        "current_position": st["current_position"],
-    }
-    # Ensure dates (and other non-JSON-native types) are encoded safely
-    return JSONResponse(jsonable_encoder(payload))
+    try:
+        st = get_state()
+        payload = {
+            "computed_at": st["computed_at"],
+            "config": st["config"],
+            "model": st["model"],
+            "metrics": st["metrics"],
+            "current_position": st["current_position"],
+        }
+        # Ensure dates (and other non-JSON-native types) are encoded safely
+        return JSONResponse(jsonable_encoder(payload))
+    except Exception as e:
+        return _json_500("api_summary", e)
 
 
 @app.post("/api/refresh")
